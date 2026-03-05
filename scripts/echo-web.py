@@ -5,9 +5,11 @@ Echo Seed Web 端 - Flask 后端
 提供 REST API 和 Web 界面
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, Response
 import sqlite3
 import json
+import csv
+import io
 from datetime import datetime, timedelta
 from pathlib import Path
 import sys
@@ -148,14 +150,15 @@ def create_capsule():
     try:
         data = request.json
         capsule_id = data.get('id', datetime.now().strftime('%Y%m%d%H%M%S%f'))
+        created_at = datetime.now().isoformat()
         
         conn = get_db()
         cursor = conn.cursor()
         
         cursor.execute('''
             INSERT INTO capsules 
-            (id, type, title, content, url, tags, reminder_at, metadata)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (id, type, title, content, url, tags, created_at, reminder_at, metadata)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             capsule_id,
             data.get('type', 'note'),
@@ -163,6 +166,7 @@ def create_capsule():
             data.get('content', ''),
             data.get('url', ''),
             data.get('tags', ''),
+            created_at,
             data.get('reminder_at'),
             json.dumps(data.get('metadata', {}))
         ))
@@ -244,6 +248,117 @@ def get_stats():
         by_status = dict(cursor.fetchall())
         
         # 待办事项
+        cursor.execute("SELECT COUNT(*) FROM capsules WHERE type = 'todo' AND status = 'active'")
+        active_todos = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'total': total,
+                'by_type': by_type,
+                'by_status': by_status,
+                'active_todos': active_todos
+            }
+        })
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/export/<format>', methods=['GET'])
+def export_capsules(format):
+    """导出胶囊数据"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # 获取查询参数
+        capsule_type = request.args.get('type')
+        search = request.args.get('search')
+        
+        # 构建查询
+        query = 'SELECT * FROM capsules WHERE 1=1'
+        params = []
+        
+        if capsule_type:
+            query += ' AND type = ?'
+            params.append(capsule_type)
+        
+        if search:
+            query += ' AND (title LIKE ? OR content LIKE ? OR tags LIKE ?)'
+            search_param = f'%{search}%'
+            params.extend([search_param, search_param, search_param])
+        
+        query += ' ORDER BY created_at DESC'
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+        
+        capsules = [dict(row) for row in rows]
+        
+        if format == 'json':
+            return Response(
+                json.dumps(capsules, ensure_ascii=False, indent=2),
+                mimetype='application/json',
+                headers={'Content-Disposition': 'attachment; filename=capsules.json'}
+            )
+        
+        elif format == 'csv':
+            output = io.StringIO()
+            if capsules:
+                writer = csv.DictWriter(output, fieldnames=capsules[0].keys())
+                writer.writeheader()
+                writer.writerows(capsules)
+            return Response(
+                output.getvalue(),
+                mimetype='text/csv',
+                headers={'Content-Disposition': 'attachment; filename=capsules.csv'}
+            )
+        
+        elif format == 'markdown':
+            md = "# Echo Seed Capsules\n\n"
+            for c in capsules:
+                md += f"## {c['title'] or 'Untitled'}\n\n"
+                md += f"**类型:** {c['type']}  \n"
+                md += f"**创建时间:** {c['created_at']}  \n"
+                if c['tags']:
+                    md += f"**标签:** {c['tags']}  \n"
+                md += f"\n{c['content'] or ''}\n\n"
+                if c['url']:
+                    md += f"🔗 {c['url']}\n\n"
+                md += "---\n\n"
+            return Response(
+                md,
+                mimetype='text/markdown',
+                headers={'Content-Disposition': 'attachment; filename=capsules.md'}
+            )
+        
+        else:
+            return jsonify({'success': False, 'error': 'Unsupported format'}), 400
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/export/stats', methods=['GET'])
+def export_stats():
+    """导出统计信息"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM capsules')
+        total = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT type, COUNT(*) FROM capsules GROUP BY type')
+        by_type = dict(cursor.fetchall())
+        
+        cursor.execute('SELECT status, COUNT(*) FROM capsules GROUP BY status')
+        by_status = dict(cursor.fetchall())
+        
         cursor.execute("SELECT COUNT(*) FROM capsules WHERE type = 'todo' AND status = 'active'")
         active_todos = cursor.fetchone()[0]
         
