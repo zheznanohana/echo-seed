@@ -10,9 +10,15 @@ import sqlite3
 import json
 import csv
 import io
+import requests
 from datetime import datetime, timedelta
 from pathlib import Path
 import sys
+
+# API 配置
+NOTION_API_KEY = '3nkZbXz4HX_EuDapN2Gbv1ZE8iML1MmbO8VwdO-lgJJTXvm5fWk_CeHfCZkrCOdA3AYZKT9NHvAHii0j4MLL2m6Cl5JMaCUkksk'
+NOTION_BASE_URL = 'https://gateway.maton.ai/notion/v1/'
+GOOGLE_CALENDAR_BASE_URL = 'https://gateway.maton.ai/google-calendar/calendar/v3/'
 
 # 获取项目根目录
 ROOT_DIR = Path(__file__).parent.parent
@@ -85,6 +91,137 @@ def init_db():
     conn.close()
 
 
+def sync_to_notion(capsule_id, capsule_type, title, content, tags):
+    """同步胶囊到 Notion"""
+    try:
+        # 获取 Notion 数据库 ID（从 metadata 或配置）
+        # 这里使用一个简单的页面创建方式
+        headers = {
+            'Authorization': f'Bearer {NOTION_API_KEY}',
+            'Notion-Version': '2025-09-03',
+            'Content-Type': 'application/json'
+        }
+        
+        # 构建页面内容
+        type_emoji = CAPSULE_CONFIG.get(capsule_type, {}).get('emoji', '📝')
+        type_name = CAPSULE_CONFIG.get(capsule_type, {}).get('name', capsule_type)
+        
+        # 使用搜索 API 获取用户的 Notion 空间中的第一个页面作为父级
+        # 或者直接创建独立页面（需要 parent）
+        # 这里我们先尝试创建一个简单页面
+        page_data = {
+            'parent': {'type': 'page_id', 'page_id': '31ad06db920781079a13d1a5738c5bdd'},  # 红烧肉菜谱页面作为测试
+            'properties': {
+                'title': [
+                    {
+                        'text': {
+                            'content': f"{type_emoji} {title or 'Untitled Capsule'}"
+                        }
+                    }
+                ]
+            },
+            'children': [
+                {
+                    'object': 'block',
+                    'type': 'paragraph',
+                    'paragraph': {
+                        'rich_text': [
+                            {
+                                'type': 'text',
+                                'text': {
+                                    'content': content or ''
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        
+        if tags:
+            page_data['children'].append({
+                'object': 'block',
+                'type': 'paragraph',
+                'paragraph': {
+                    'rich_text': [
+                        {
+                            'type': 'text',
+                            'text': {
+                                'content': f'Tags: {tags}'
+                            }
+                        }
+                    ]
+                }
+            })
+        
+        response = requests.post(
+            f'{NOTION_BASE_URL}pages',
+            headers=headers,
+            json=page_data,
+            timeout=10
+        )
+        
+        if response.status_code in [200, 201]:
+            result = response.json()
+            return result.get('id')
+        else:
+            print(f"Notion sync failed: {response.status_code} - {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"Notion sync error: {e}")
+        return None
+
+
+def sync_to_calendar(capsule_id, title, content, reminder_at):
+    """同步待办事项到 Google Calendar"""
+    try:
+        if not reminder_at:
+            return None
+        
+        headers = {
+            'Authorization': f'Bearer {NOTION_API_KEY}',  # 使用相同的 API key
+            'Content-Type': 'application/json'
+        }
+        
+        # 解析提醒时间
+        try:
+            reminder_dt = datetime.fromisoformat(reminder_at.replace('Z', '+00:00'))
+        except:
+            reminder_dt = datetime.now() + timedelta(days=1)
+        
+        event_data = {
+            'summary': f'✅ {title or "Capsule Reminder"}',
+            'description': content or '',
+            'start': {
+                'dateTime': reminder_dt.isoformat(),
+                'timeZone': 'Asia/Shanghai'
+            },
+            'end': {
+                'dateTime': (reminder_dt + timedelta(hours=1)).isoformat(),
+                'timeZone': 'Asia/Shanghai'
+            }
+        }
+        
+        response = requests.post(
+            f'{GOOGLE_CALENDAR_BASE_URL}calendars/primary/events',
+            headers=headers,
+            json=event_data,
+            timeout=10
+        )
+        
+        if response.status_code in [200, 201]:
+            result = response.json()
+            return result.get('id')
+        else:
+            print(f"Calendar sync failed: {response.status_code} - {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"Calendar sync error: {e}")
+        return None
+
+
 @app.route('/')
 def index():
     """Web 界面"""
@@ -152,31 +289,60 @@ def create_capsule():
         capsule_id = data.get('id', datetime.now().strftime('%Y%m%d%H%M%S%f'))
         created_at = datetime.now().isoformat()
         
+        capsule_type = data.get('type', 'note')
+        title = data.get('title', '')
+        content = data.get('content', '')
+        tags = data.get('tags', '')
+        reminder_at = data.get('reminder_at')
+        
         conn = get_db()
         cursor = conn.cursor()
         
+        # 先插入胶囊
         cursor.execute('''
             INSERT INTO capsules 
             (id, type, title, content, url, tags, created_at, reminder_at, metadata)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             capsule_id,
-            data.get('type', 'note'),
-            data.get('title', ''),
-            data.get('content', ''),
+            capsule_type,
+            title,
+            content,
             data.get('url', ''),
-            data.get('tags', ''),
+            tags,
             created_at,
-            data.get('reminder_at'),
+            reminder_at,
             json.dumps(data.get('metadata', {}))
         ))
+        
+        # 同步到 Notion
+        notion_page_id = sync_to_notion(capsule_id, capsule_type, title, content, tags)
+        
+        # 同步到 Google Calendar（仅待办类型且有提醒时间）
+        calendar_event_id = None
+        if capsule_type == 'todo' and reminder_at:
+            calendar_event_id = sync_to_calendar(capsule_id, title, content, reminder_at)
+        
+        # 更新同步 ID
+        if notion_page_id or calendar_event_id:
+            updates = []
+            params = []
+            if notion_page_id:
+                updates.append('notion_page_id = ?')
+                params.append(notion_page_id)
+            if calendar_event_id:
+                updates.append('calendar_event_id = ?')
+                params.append(calendar_event_id)
+            params.append(capsule_id)
+            cursor.execute(f"UPDATE capsules SET {', '.join(updates)} WHERE id = ?", params)
         
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'id': capsule_id})
+        return jsonify({'success': True, 'id': capsule_id, 'notion_page_id': notion_page_id, 'calendar_event_id': calendar_event_id})
     
     except Exception as e:
+        print(f"Create capsule error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
