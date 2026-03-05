@@ -344,6 +344,8 @@
         // 显示新建模态框
         function showCreateModal() {
             document.getElementById('create-modal').classList.remove('hidden');
+            // 初始化默认类型选中状态
+            selectType('note');
         }
 
         // 隐藏新建模态框
@@ -368,6 +370,12 @@
             const content = document.getElementById('create-content').value;
             const tags = document.getElementById('create-tags').value;
             
+            // 验证至少要有标题或内容
+            if (!title.trim() && !content.trim()) {
+                alert('请至少输入标题或内容！');
+                return;
+            }
+            
             try {
                 const res = await fetch('/api/capsules', {
                     method: 'POST',
@@ -383,9 +391,12 @@
                     document.getElementById('create-tags').value = '';
                     await loadCapsules();
                     loadStats();
+                } else {
+                    alert('创建失败：' + (data.error || '未知错误'));
                 }
             } catch (error) {
                 console.error('创建失败:', error);
+                alert('创建失败：' + error.message);
             }
         }
 
