@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📦 闪念胶囊</title>
+    <title>📦 Echo Seed 回声种子</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .capsule-card {
@@ -25,14 +25,19 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <span class="text-2xl">📦</span>
-                    <h1 class="text-xl font-bold text-gray-800">闪念胶囊</h1>
+                    <h1 class="text-xl font-bold text-gray-800">Echo Seed 回声种子</h1>
                 </div>
                 <div class="flex items-center space-x-3">
+                    <!-- 语言切换 -->
+                    <button onclick="toggleLanguage()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition" id="lang-btn">
+                        🌐 EN
+                    </button>
+                    
                     <!-- 导出按钮 -->
                     <div class="relative">
                         <button onclick="toggleExportMenu()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1">
                             <span>📤</span>
-                            <span>导出</span>
+                            <span data-zh="导出" data-en="Export">导出</span>
                         </button>
                         <!-- 导出菜单 -->
                         <div id="export-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-20">
@@ -49,498 +54,383 @@
                         </div>
                     </div>
                     
-                    <button onclick="showCreateModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                        ✨ 新建
+                    <!-- 新建按钮 -->
+                    <button onclick="showCreateModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1">
+                        <span>✨</span>
+                        <span data-zh="新建" data-en="New">新建</span>
                     </button>
+                </div>
+            </div>
+            
+            <!-- 筛选栏 -->
+            <div class="mt-4 flex items-center space-x-3">
+                <div class="flex-1 relative">
+                    <input type="text" id="search-input" placeholder="搜索胶囊..." 
+                           oninput="searchCapsules()" 
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                
+                <!-- 类型筛选 -->
+                <div class="flex space-x-2" id="type-filters">
+                    <button onclick="filterByType('all')" class="type-filter active px-3 py-2 rounded-lg text-sm font-medium bg-gray-800 text-white transition">全部</button>
+                    <button onclick="filterByType('note')" class="type-filter px-3 py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition">📝</button>
+                    <button onclick="filterByType('idea')" class="type-filter px-3 py-2 rounded-lg text-sm font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 transition">💡</button>
+                    <button onclick="filterByType('link')" class="type-filter px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition">🔗</button>
+                    <button onclick="filterByType('diary')" class="type-filter px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition">📔</button>
+                    <button onclick="filterByType('thought')" class="type-filter px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition">💭</button>
+                    <button onclick="filterByType('collection')" class="type-filter px-3 py-2 rounded-lg text-sm font-medium bg-pink-100 text-pink-700 hover:bg-pink-200 transition">⭐</button>
+                    <button onclick="filterByType('todo')" class="type-filter px-3 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition">✅</button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- 统计面板 -->
-    <div class="max-w-6xl mx-auto px-4 py-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="stats-panel">
-            <!-- 动态加载 -->
-        </div>
-
-        <!-- 类型筛选 -->
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-medium text-gray-700">筛选类型</h2>
-                <button onclick="clearFilter()" class="text-xs text-gray-500 hover:text-gray-700">清除筛选</button>
+    <!-- 主内容区 -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+        <!-- 统计面板 -->
+        <div id="stats-panel" class="mb-6 grid grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="text-sm text-gray-500">总数</div>
+                <div class="text-2xl font-bold" id="stat-total">0</div>
             </div>
-            <div class="flex flex-wrap gap-2" id="type-filters">
-                <!-- 动态加载 -->
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="text-sm text-gray-500">待办</div>
+                <div class="text-2xl font-bold" id="stat-todos">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="text-sm text-gray-500">已完成</div>
+                <div class="text-2xl font-bold" id="stat-completed">0</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="text-sm text-gray-500">本周</div>
+                <div class="text-2xl font-bold" id="stat-week">0</div>
             </div>
         </div>
 
-        <!-- 搜索框 -->
-        <div class="mb-6">
-            <input 
-                type="text" 
-                id="search-input"
-                placeholder="🔍 搜索胶囊..." 
-                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
-                oninput="debouncedSearch()"
-            >
+        <!-- 胶囊列表 -->
+        <div id="capsules-container" class="space-y-4">
+            <!-- 胶囊卡片将通过 JavaScript 动态加载 -->
         </div>
 
-        <!-- 时间线 -->
-        <div id="timeline" class="space-y-6">
-            <!-- 动态加载 -->
-        </div>
-
-        <!-- 加载更多 -->
-        <div class="text-center py-8">
-            <button onclick="loadMore()" class="text-gray-500 hover:text-gray-700 text-sm">
-                加载更多...
+        <!-- 空状态 -->
+        <div id="empty-state" class="hidden text-center py-12">
+            <div class="text-6xl mb-4">🌱</div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">暂无胶囊</h3>
+            <p class="text-gray-500 mb-4">点击"新建"按钮创建你的第一个想法</p>
+            <button onclick="showCreateModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition">
+                ✨ 新建胶囊
             </button>
         </div>
-    </div>
+    </main>
 
-    <!-- 创建胶囊弹窗 -->
-    <div id="create-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl w-full max-w-lg mx-4 overflow-hidden">
+    <!-- 新建胶囊模态框 -->
+    <div id="create-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-bold" data-zh="新建胶囊" data-en="New Capsule">新建胶囊</h2>
+            </div>
             <div class="p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-800">新建胶囊</h3>
-                    <button onclick="hideCreateModal()" class="text-gray-400 hover:text-gray-600 text-xl">×</button>
+                <!-- 类型选择 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">类型</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="selectType('note')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition" data-type="note">📝 笔记</button>
+                        <button onclick="selectType('idea')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 transition" data-type="idea">💡 灵感</button>
+                        <button onclick="selectType('link')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-type="link">🔗 链接</button>
+                        <button onclick="selectType('diary')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition" data-type="diary">📔 日记</button>
+                        <button onclick="selectType('thought')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition" data-type="thought">💭 思考</button>
+                        <button onclick="selectType('collection')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-pink-100 text-pink-700 hover:bg-pink-200 transition" data-type="collection">⭐ 收藏</button>
+                        <button onclick="selectType('todo')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 transition" data-type="todo">✅ 待办</button>
+                        <button onclick="selectType('voice')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-cyan-100 text-cyan-700 hover:bg-cyan-200 transition" data-type="voice">🎤 语音</button>
+                    </div>
                 </div>
                 
-                <textarea 
-                    id="new-content"
-                    placeholder="记录你的想法..."
-                    class="w-full h-32 px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none resize-none mb-4"
-                ></textarea>
-
-                <div class="flex items-center justify-between">
-                    <select id="new-type" class="px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none">
-                        <option value="note">📝 笔记</option>
-                        <option value="idea">💡 灵感</option>
-                        <option value="link">🔗 链接</option>
-                        <option value="diary">📔 日记</option>
-                        <option value="thought">💭 思考</option>
-                        <option value="collection">⭐ 收藏</option>
-                        <option value="todo">✅ 待办</option>
-                        <option value="voice">🎤 语音</option>
-                    </select>
-                    
-                    <button onclick="createCapsule()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition">
-                        创建
-                    </button>
+                <!-- 标题 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">标题</label>
+                    <input type="text" id="create-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <!-- 内容 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">内容</label>
+                    <textarea id="create-content" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="记录你的想法..."></textarea>
+                </div>
+                
+                <!-- 标签 -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">标签</label>
+                    <input type="text" id="create-tags" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="用逗号分隔，例如：工作，重要">
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- 胶囊详情弹窗 -->
-    <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl w-full max-w-lg mx-4 overflow-hidden">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div id="detail-header" class="flex items-center space-x-2">
-                        <!-- 动态加载 -->
-                    </div>
-                    <button onclick="hideDetailModal()" class="text-gray-400 hover:text-gray-600 text-xl">×</button>
-                </div>
-                
-                <div id="detail-content" class="text-gray-700 whitespace-pre-wrap mb-4">
-                    <!-- 动态加载 -->
-                </div>
-
-                <div id="detail-tags" class="flex flex-wrap gap-2 mb-4">
-                    <!-- 动态加载 -->
-                </div>
-
-                <div class="flex items-center justify-between pt-4 border-t">
-                    <span id="detail-time" class="text-sm text-gray-500">
-                        <!-- 动态加载 -->
-                    </span>
-                    <div class="flex space-x-2">
-                        <button onclick="completeCapsule()" class="text-green-500 hover:text-green-600 text-sm font-medium">
-                            完成
-                        </button>
-                        <button onclick="archiveCapsule()" class="text-gray-500 hover:text-gray-600 text-sm font-medium">
-                            归档
-                        </button>
-                    </div>
-                </div>
+            <div class="p-6 border-t bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+                <button onclick="hideCreateModal()" class="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition">取消</button>
+                <button onclick="createCapsule()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">创建</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 全局状态
-        let currentFilter = null;
-        let currentSearch = '';
-        let currentCapsuleId = null;
+        // 全局变量
         let capsules = [];
-        let config = {};
+        let currentFilter = { type: 'all', search: '' };
+        let selectedType = 'note';
+        let currentLang = 'zh';
+
+        // 语言切换
+        const i18n = {
+            zh: {
+                title: '📦 Echo Seed 回声种子',
+                export: '导出',
+                new: '新建',
+                search: '搜索胶囊...',
+                total: '总数',
+                todos: '待办',
+                completed: '已完成',
+                week: '本周',
+                empty: '暂无胶囊',
+                emptyDesc: '点击"新建"按钮创建你的第一个想法',
+                create: '新建胶囊',
+                createTitle: '新建胶囊',
+                type: '类型',
+                title: '标题',
+                content: '内容',
+                tags: '标签',
+                cancel: '取消',
+                createBtn: '创建'
+            },
+            en: {
+                title: '📦 Echo Seed',
+                export: 'Export',
+                new: 'New',
+                search: 'Search capsules...',
+                total: 'Total',
+                todos: 'Todos',
+                completed: 'Completed',
+                week: 'This Week',
+                empty: 'No capsules',
+                emptyDesc: 'Click "New" to create your first idea',
+                create: 'New Capsule',
+                createTitle: 'New Capsule',
+                type: 'Type',
+                title: 'Title',
+                content: 'Content',
+                tags: 'Tags',
+                cancel: 'Cancel',
+                createBtn: 'Create'
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            document.getElementById('lang-btn').textContent = currentLang === 'zh' ? '🌐 EN' : '🌐 中文';
+            document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
+            
+            // 更新文本
+            document.querySelector('h1').textContent = i18n[currentLang].title;
+            document.querySelector('[data-zh="导出"]').textContent = i18n[currentLang].export;
+            document.querySelector('[data-zh="新建"]').textContent = i18n[currentLang].new;
+            document.getElementById('search-input').placeholder = i18n[currentLang].search;
+            
+            localStorage.setItem('echo-seed-lang', currentLang);
+        }
+
+        // 加载语言偏好
+        const savedLang = localStorage.getItem('echo-seed-lang') || 'zh';
+        if (savedLang === 'en') {
+            toggleLanguage();
+        }
 
         // 初始化
         async function init() {
-            await loadConfig();
-            await loadStats();
             await loadCapsules();
-            renderTypeFilters();
-        }
-
-        // 加载配置
-        async function loadConfig() {
-            const res = await fetch('/api/config');
-            const data = await res.json();
-            config = data.data;
-        }
-
-        // 加载统计
-        async function loadStats() {
-            const res = await fetch('/api/stats');
-            const data = await res.json();
-            const stats = data.data;
-
-            const panel = document.getElementById('stats-panel');
-            panel.innerHTML = `
-                <div class="bg-white rounded-xl shadow-sm p-4">
-                    <div class="text-2xl font-bold text-gray-800">${stats.total}</div>
-                    <div class="text-sm text-gray-500">总数</div>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-4">
-                    <div class="text-2xl font-bold text-blue-500">${stats.active_todos}</div>
-                    <div class="text-sm text-gray-500">待办</div>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-4">
-                    <div class="text-2xl font-bold text-green-500">${stats.by_status.active || 0}</div>
-                    <div class="text-sm text-gray-500">进行中</div>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-4">
-                    <div class="text-2xl font-bold text-gray-500">${stats.by_status.completed || 0}</div>
-                    <div class="text-sm text-gray-500">已完成</div>
-                </div>
-            `;
+            loadStats();
         }
 
         // 加载胶囊
         async function loadCapsules() {
-            let url = '/api/capsules?days=30';
-            if (currentFilter) url += `&type=${currentFilter}`;
-            if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
-
-            const res = await fetch(url);
-            const data = await res.json();
-            capsules = data.data;
-            renderTimeline();
+            try {
+                const params = new URLSearchParams();
+                if (currentFilter.type !== 'all') params.append('type', currentFilter.type);
+                if (currentFilter.search) params.append('search', currentFilter.search);
+                
+                const res = await fetch(`/api/capsules?${params}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    capsules = data.data;
+                    renderCapsules();
+                }
+            } catch (error) {
+                console.error('加载胶囊失败:', error);
+            }
         }
 
-        // 渲染类型筛选
-        function renderTypeFilters() {
-            const container = document.getElementById('type-filters');
-            container.innerHTML = Object.entries(config.types).map(([key, value]) => `
-                <button 
-                    onclick="setFilter('${key}')"
-                    class="type-filter px-3 py-1.5 rounded-full text-sm font-medium transition flex items-center space-x-1.5 ${currentFilter === key ? 'ring-2 ring-blue-500' : 'bg-gray-100 hover:bg-gray-200'}"
-                    style="background-color: ${currentFilter === key ? value.bg : ''}; color: ${currentFilter === key ? value.color : ''}"
-                >
-                    <span>${value.emoji}</span>
-                    <span>${value.name}</span>
-                </button>
-            `).join('');
-        }
-
-        // 渲染时间线
-        function renderTimeline() {
-            const timeline = document.getElementById('timeline');
+        // 渲染胶囊
+        function renderCapsules() {
+            const container = document.getElementById('capsules-container');
+            const emptyState = document.getElementById('empty-state');
             
-            // 按日期分组
-            const byDate = {};
-            capsules.forEach(c => {
-                const date = c.created_at.split('T')[0];
-                if (!byDate[date]) byDate[date] = [];
-                byDate[date].push(c);
-            });
-
-            if (Object.keys(byDate).length === 0) {
-                timeline.innerHTML = `
-                    <div class="text-center py-12 text-gray-500">
-                        <div class="text-4xl mb-2">📭</div>
-                        <div>暂无胶囊</div>
-                    </div>
-                `;
+            if (capsules.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
                 return;
             }
-
-            timeline.innerHTML = Object.entries(byDate).sort((a, b) => b[0].localeCompare(a[0])).map(([date, items]) => `
-                <div>
-                    <div class="text-sm font-medium text-gray-500 mb-3 sticky top-16 bg-gray-50 py-2">${formatDate(date)}</div>
-                    <div class="space-y-3">
-                        ${items.map(c => renderCapsuleCard(c)).join('')}
+            
+            emptyState.classList.add('hidden');
+            container.innerHTML = capsules.map(capsule => `
+                <div class="capsule-card bg-white rounded-lg shadow-sm p-4 border-l-4" style="border-left-color: ${capsule.type_color}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="text-xl">${capsule.type_emoji}</span>
+                                <span class="text-sm font-medium px-2 py-1 rounded" style="background-color: ${capsule.type_bg}; color: ${capsule.type_color}">
+                                    ${capsule.type_name}
+                                </span>
+                                <span class="text-xs text-gray-500">${new Date(capsule.created_at).toLocaleString('zh-CN')}</span>
+                            </div>
+                            ${capsule.title ? `<h3 class="text-lg font-semibold mb-2">${escapeHtml(capsule.title)}</h3>` : ''}
+                            <p class="text-gray-700 whitespace-pre-wrap">${escapeHtml(capsule.content)}</p>
+                            ${capsule.url ? `<a href="${capsule.url}" target="_blank" class="text-blue-500 hover:underline mt-2 inline-block">🔗 ${capsule.url}</a>` : ''}
+                            ${capsule.tags ? `<div class="mt-2 flex flex-wrap gap-2">${capsule.tags.split(',').map(tag => `<span class="text-xs bg-gray-100 px-2 py-1 rounded">#${tag.trim()}</span>`).join('')}</div>` : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            ${capsule.status === 'active' ? `<button onclick="updateStatus('${capsule.id}', 'completed')" class="text-green-500 hover:text-green-600" title="完成">✅</button>` : ''}
+                            <button onclick="deleteCapsule('${capsule.id}')" class="text-red-500 hover:text-red-600" title="删除">🗑️</button>
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        // 渲染胶囊卡片
-        function renderCapsuleCard(capsule) {
-            const typeConfig = config.types[capsule.type] || config.types.note;
-            const statusConfig = config.statuses[capsule.status];
-            
-            return `
-                <div 
-                    onclick="showDetail('${capsule.id}')"
-                    class="capsule-card bg-white rounded-xl shadow-sm p-4 cursor-pointer border-l-4 transition-all hover:shadow-md"
-                    style="border-left-color: ${typeConfig.color}"
-                >
-                    <div class="flex items-start justify-between mb-2">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-lg">${typeConfig.emoji}</span>
-                            <span class="font-medium text-gray-800">${escapeHtml(capsule.title)}</span>
-                        </div>
-                        <span class="text-xs text-gray-400">${capsule.created_at.split('T')[1].substr(0, 5)}</span>
-                    </div>
-                    
-                    ${renderCapsuleContent(capsule)}
-                    
-                    ${capsule.tags ? `
-                        <div class="flex flex-wrap gap-1 mt-2">
-                            ${capsule.tags.slice(0, 3).map(tag => `
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">#${tag}</span>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        // 根据类型渲染不同内容
-        function renderCapsuleContent(capsule) {
-            const type = capsule.type;
-            
-            // TODO 类型：显示复选框
-            if (type === 'todo' && capsule.checklist && capsule.checklist.length > 0) {
-                return `
-                    <div class="space-y-1 mt-2">
-                        ${capsule.checklist.map((item, i) => `
-                            <div class="flex items-center space-x-2 text-sm">
-                                <input type="checkbox" class="rounded text-blue-500" onclick="event.stopPropagation(); toggleChecklist('${capsule.id}', ${i})">
-                                <span class="text-gray-700">${escapeHtml(item)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            // LINK 类型：显示链接预览
-            if (type === 'link' && capsule.url) {
-                return `
-                    <div class="mt-2">
-                        <a href="${capsule.url}" target="_blank" onclick="event.stopPropagation()" class="text-sm text-blue-600 hover:underline flex items-center">
-                            🔗 ${escapeHtml(capsule.url)}
-                        </a>
-                        <div class="text-sm text-gray-600 mt-1 line-clamp-2">${escapeHtml(capsule.content)}</div>
-                    </div>
-                `;
-            }
-            
-            // DIARY 类型：引用样式
-            if (type === 'diary') {
-                return `
-                    <div class="mt-2 pl-3 border-l-2 border-green-500 italic text-sm text-gray-700">
-                        ${escapeHtml(capsule.content)}
-                    </div>
-                `;
-            }
-            
-            // THOUGHT 类型：特殊背景
-            if (type === 'thought') {
-                return `
-                    <div class="mt-2 p-2 bg-purple-50 rounded text-sm text-gray-700">
-                        💭 ${escapeHtml(capsule.content)}
-                    </div>
-                `;
-            }
-            
-            // 默认：普通显示
-            return `<div class="text-sm text-gray-600 line-clamp-2 mt-2">${escapeHtml(capsule.content)}</div>`;
-        }
-
-        // 切换待办项状态
-        async function toggleChecklist(capsuleId, itemIndex) {
-            const res = await fetch(`/api/capsules/${capsuleId}/checklist`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({index: itemIndex})
+        // 筛选类型
+        function filterByType(type) {
+            currentFilter.type = type;
+            document.querySelectorAll('.type-filter').forEach(btn => {
+                btn.classList.remove('active', 'bg-gray-800', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
             });
-            
-            const data = await res.json();
-            if (!data.success) {
-                alert('更新失败');
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('active', 'bg-gray-800', 'text-white');
+            loadCapsules();
+        }
+
+        // 搜索
+        function searchCapsules() {
+            currentFilter.search = document.getElementById('search-input').value;
+            loadCapsules();
+        }
+
+        // 加载统计
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                
+                if (data.success) {
+                    const stats = data.data;
+                    document.getElementById('stat-total').textContent = stats.total;
+                    document.getElementById('stat-todos').textContent = stats.by_type?.todo || 0;
+                    document.getElementById('stat-completed').textContent = stats.by_status?.completed || 0;
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
             }
         }
 
-        // 设置筛选
-        function setFilter(type) {
-            currentFilter = currentFilter === type ? null : type;
-            renderTypeFilters();
-            loadCapsules();
-        }
-
-        // 清除筛选
-        function clearFilter() {
-            currentFilter = null;
-            renderTypeFilters();
-            loadCapsules();
-        }
-
-        // 搜索防抖
-        let searchTimer;
-        function debouncedSearch() {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => {
-                currentSearch = document.getElementById('search-input').value;
-                loadCapsules();
-            }, 300);
-        }
-
-        // 显示创建弹窗
+        // 显示新建模态框
         function showCreateModal() {
             document.getElementById('create-modal').classList.remove('hidden');
-            document.getElementById('create-modal').classList.add('flex');
-            document.getElementById('new-content').focus();
         }
 
-        // 隐藏创建弹窗
+        // 隐藏新建模态框
         function hideCreateModal() {
             document.getElementById('create-modal').classList.add('hidden');
-            document.getElementById('create-modal').classList.remove('flex');
-            document.getElementById('new-content').value = '';
+        }
+
+        // 选择类型
+        function selectType(type) {
+            selectedType = type;
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-blue-500');
+                if (btn.dataset.type === type) {
+                    btn.classList.add('ring-2', 'ring-blue-500');
+                }
+            });
         }
 
         // 创建胶囊
         async function createCapsule() {
-            const content = document.getElementById('new-content').value;
-            const type = document.getElementById('new-type').value;
-
-            if (!content.trim()) {
-                alert('请输入内容');
-                return;
+            const title = document.getElementById('create-title').value;
+            const content = document.getElementById('create-content').value;
+            const tags = document.getElementById('create-tags').value;
+            
+            try {
+                const res = await fetch('/api/capsules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: selectedType, title, content, tags })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    hideCreateModal();
+                    document.getElementById('create-title').value = '';
+                    document.getElementById('create-content').value = '';
+                    document.getElementById('create-tags').value = '';
+                    await loadCapsules();
+                    loadStats();
+                }
+            } catch (error) {
+                console.error('创建失败:', error);
             }
-
-            const res = await fetch('/api/create', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({content, type})
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                hideCreateModal();
-                await loadCapsules();
-                await loadStats();
-            } else {
-                alert('创建失败：' + data.error);
-            }
-        }
-
-        // 显示详情
-        async function showDetail(id) {
-            currentCapsuleId = id;
-            const res = await fetch(`/api/capsules/${id}`);
-            const data = await res.json();
-            const c = data.data;
-
-            const typeConfig = config.types[c.type];
-            document.getElementById('detail-header').innerHTML = `
-                <span class="text-2xl">${typeConfig.emoji}</span>
-                <span class="font-bold text-gray-800">${typeConfig.name}</span>
-            `;
-
-            document.getElementById('detail-content').textContent = c.content;
-
-            document.getElementById('detail-tags').innerHTML = c.tags ? 
-                c.tags.map(tag => `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">#${tag}</span>`).join('') : '';
-
-            document.getElementById('detail-time').textContent = c.created_at.replace('T', ' ');
-
-            document.getElementById('detail-modal').classList.remove('hidden');
-            document.getElementById('detail-modal').classList.add('flex');
-        }
-
-        // 隐藏详情
-        function hideDetailModal() {
-            document.getElementById('detail-modal').classList.add('hidden');
-            document.getElementById('detail-modal').classList.remove('flex');
-            currentCapsuleId = null;
-        }
-
-        // 完成胶囊
-        async function completeCapsule() {
-            if (!currentCapsuleId) return;
-            await updateStatus('completed');
-        }
-
-        // 归档胶囊
-        async function archiveCapsule() {
-            if (!currentCapsuleId) return;
-            await updateStatus('archived');
         }
 
         // 更新状态
-        async function updateStatus(status) {
-            const res = await fetch(`/api/capsules/${currentCapsuleId}/status`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({status})
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                hideDetailModal();
+        async function updateStatus(id, status) {
+            try {
+                await fetch(`/api/capsules/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
                 await loadCapsules();
-                await loadStats();
-            } else {
-                alert('更新失败：' + data.error);
+                loadStats();
+            } catch (error) {
+                console.error('更新失败:', error);
             }
         }
 
-        // 加载更多
-        function loadMore() {
-            // TODO: 分页加载
+        // 删除胶囊
+        async function deleteCapsule(id) {
+            if (!confirm('确定要删除这个胶囊吗？')) return;
+            
+            try {
+                await fetch(`/api/capsules/${id}`, { method: 'DELETE' });
+                await loadCapsules();
+                loadStats();
+            } catch (error) {
+                console.error('删除失败:', error);
+            }
         }
 
-        // 切换导出菜单
+        // 导出菜单
         function toggleExportMenu() {
-            const menu = document.getElementById('export-menu');
-            menu.classList.toggle('hidden');
+            document.getElementById('export-menu').classList.toggle('hidden');
         }
-
-        // 点击其他地方关闭菜单
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('export-menu');
-            const button = e.target.closest('button');
-            if (button && button.onclick && button.onclick.toString().includes('toggleExportMenu')) {
-                return;
-            }
-            if (!menu.contains(e.target)) {
-                menu.classList.add('hidden');
-            }
-        });
 
         // 导出数据
-        function exportData(format, scope = 'current') {
-            let status = 'all';
-            let type = '';
-            
-            // 根据导出范围决定
+        async function exportData(format, scope) {
+            const params = new URLSearchParams();
             if (scope === 'current') {
-                // 当前筛选状态
-                status = currentFilter ? 'active' : 'all';
-                type = currentFilter || '';
+                if (currentFilter.type !== 'all') params.append('type', currentFilter.type);
+                if (currentFilter.search) params.append('search', currentFilter.search);
             }
-            // scope === 'all' 时，导出全部（status='all', type=''）
             
-            let url = `/api/export/${format}?status=${status}`;
-            if (type) url += `&type=${type}`;
-            
-            window.open(url, '_blank');
+            window.open(`/api/export/${format}?${params}`, '_blank');
             document.getElementById('export-menu').classList.add('hidden');
         }
 
@@ -551,34 +441,18 @@
             
             if (data.success) {
                 const stats = data.data;
-                const text = `闪念胶囊统计信息\n\n总数：${stats.total}\n按类型：${JSON.stringify(stats.by_type)}\n按状态：${JSON.stringify(stats.by_status)}\n待办事项：${stats.active_todos}\n热门标签：${JSON.stringify(stats.top_tags)}`;
+                const text = `Echo Seed 统计信息\n\n总数：${stats.total}\n按类型：${JSON.stringify(stats.by_type)}\n按状态：${JSON.stringify(stats.by_status)}\n待办事项：${stats.active_todos}`;
                 
                 const blob = new Blob([text], {type: 'text/plain'});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `capsules_stats_${new Date().toISOString().split('T')[0]}.txt`;
+                a.download = `echo_seed_stats_${new Date().toISOString().split('T')[0]}.txt`;
                 a.click();
                 URL.revokeObjectURL(url);
             }
             
             document.getElementById('export-menu').classList.add('hidden');
-        }
-
-        // 格式化日期
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-
-            if (date.toDateString() === today.toDateString()) {
-                return '今天';
-            } else if (date.toDateString() === yesterday.toDateString()) {
-                return '昨天';
-            } else {
-                return date.toLocaleDateString('zh-CN', {month: 'long', day: 'numeric'});
-            }
         }
 
         // HTML 转义
