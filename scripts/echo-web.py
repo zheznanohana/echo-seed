@@ -91,11 +91,13 @@ def init_db():
     conn.close()
 
 
+# 闪电胶囊父页面 ID
+NOTION_PARENT_PAGE_ID = '31ad06db9207814a92c0c6252afce61b'
+
+
 def sync_to_notion(capsule_id, capsule_type, title, content, tags):
-    """同步胶囊到 Notion"""
+    """同步胶囊到 Notion - 所有胶囊作为子页面挂到闪电胶囊父页面下"""
     try:
-        # 获取 Notion 数据库 ID（从 metadata 或配置）
-        # 这里使用一个简单的页面创建方式
         headers = {
             'Authorization': f'Bearer {NOTION_API_KEY}',
             'Notion-Version': '2025-09-03',
@@ -104,13 +106,10 @@ def sync_to_notion(capsule_id, capsule_type, title, content, tags):
         
         # 构建页面内容
         type_emoji = CAPSULE_CONFIG.get(capsule_type, {}).get('emoji', '📝')
-        type_name = CAPSULE_CONFIG.get(capsule_type, {}).get('name', capsule_type)
         
-        # 使用搜索 API 获取用户的 Notion 空间中的第一个页面作为父级
-        # 或者直接创建独立页面（需要 parent）
-        # 这里我们先尝试创建一个简单页面
+        # 所有胶囊都作为闪电胶囊页面的子页面
         page_data = {
-            'parent': {'type': 'page_id', 'page_id': '31ad06db920781079a13d1a5738c5bdd'},  # 红烧肉菜谱页面作为测试
+            'parent': {'type': 'page_id', 'page_id': NOTION_PARENT_PAGE_ID},
             'properties': {
                 'title': [
                     {
