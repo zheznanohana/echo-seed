@@ -167,4 +167,4 @@ MIT License
 ---
 
 **GitHub:** https://github.com/zheznanohana/echo-seed  
-**作者 / Author:** Zhu Zhe (@zheznanohana)
+**作者 / Author:** @zheznanohana
