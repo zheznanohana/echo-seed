@@ -1,63 +1,40 @@
+{% raw %}
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📦 Echo Seed 回声种子</title>
+    <title>📦 Echo Seed 回声种子 - AI 增强版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .capsule-card {
-            transition: all 0.2s;
-        }
-        .capsule-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .type-filter.active {
-            transform: scale(1.05);
-        }
+        .capsule-card { transition: all 0.2s; }
+        .capsule-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .type-filter.active { transform: scale(1.05); }
+        .ai-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- 顶部导航 -->
     <nav class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="max-w-6xl mx-auto px-4 py-4">
+        <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <span class="text-2xl">📦</span>
-                    <h1 class="text-xl font-bold text-gray-800">Echo Seed 回声种子</h1>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Echo Seed 回声种子</h1>
+                        <span class="text-xs ai-badge text-white px-2 py-0.5 rounded-full">AI 增强版</span>
+                    </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <!-- 语言切换 -->
-                    <button onclick="toggleLanguage()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition" id="lang-btn">
-                        🌐 EN
+                    <!-- AI 分析面板开关 -->
+                    <button onclick="toggleAI()" class="ai-badge text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1">
+                        <span>🤖</span>
+                        <span>AI 面板</span>
                     </button>
-                    
-                    <!-- 导出按钮 -->
-                    <div class="relative">
-                        <button onclick="toggleExportMenu()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1">
-                            <span>📤</span>
-                            <span data-zh="导出" data-en="Export">导出</span>
-                        </button>
-                        <!-- 导出菜单 -->
-                        <div id="export-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-20">
-                            <div class="px-4 py-2 border-b text-xs text-gray-500">导出范围</div>
-                            <a onclick="exportData('json', 'all')" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">📄 JSON (全部)</a>
-                            <a onclick="exportData('markdown', 'all')" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">📝 Markdown (全部)</a>
-                            <a onclick="exportData('csv', 'all')" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">📊 CSV (全部)</a>
-                            <div class="border-t my-1"></div>
-                            <a onclick="exportData('json', 'current')" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">📄 JSON (当前筛选)</a>
-                            <a onclick="exportData('markdown', 'current')" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">📝 Markdown (当前筛选)</a>
-                            <a onclick="exportData('csv', 'current')" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">📊 CSV (当前筛选)</a>
-                            <div class="border-t my-1"></div>
-                            <a onclick="exportStats()" class="block px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">📈 统计信息</a>
-                        </div>
-                    </div>
-                    
                     <!-- 新建按钮 -->
                     <button onclick="showCreateModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1">
                         <span>✨</span>
-                        <span data-zh="新建" data-en="New">新建</span>
+                        <span>新建</span>
                     </button>
                 </div>
             </div>
@@ -65,8 +42,8 @@
             <!-- 筛选栏 -->
             <div class="mt-4 flex items-center space-x-3">
                 <div class="flex-1 relative">
-                    <input type="text" id="search-input" placeholder="搜索胶囊..." 
-                           oninput="searchCapsules()" 
+                    <input type="text" id="search-input" placeholder="搜索种子..." 
+                           oninput="searchSeeds()" 
                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -89,51 +66,116 @@
     </nav>
 
     <!-- 主内容区 -->
-    <main class="max-w-6xl mx-auto px-4 py-6">
-        <!-- 统计面板 -->
-        <div id="stats-panel" class="mb-6 grid grid-cols-4 gap-4">
-            <div class="bg-white rounded-lg shadow-sm p-4">
-                <div class="text-sm text-gray-500">总数</div>
-                <div class="text-2xl font-bold" id="stat-total">0</div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4">
-                <div class="text-sm text-gray-500">待办</div>
-                <div class="text-2xl font-bold" id="stat-todos">0</div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4">
-                <div class="text-sm text-gray-500">已完成</div>
-                <div class="text-2xl font-bold" id="stat-completed">0</div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4">
-                <div class="text-sm text-gray-500">本周</div>
-                <div class="text-2xl font-bold" id="stat-week">0</div>
-            </div>
-        </div>
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-12 gap-6">
+            <!-- 左侧：种子列表（占 8 列） -->
+            <div class="col-span-12 lg:col-span-8">
+                <!-- 统计面板 -->
+                <div id="stats-panel" class="mb-6 grid grid-cols-4 gap-4">
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="text-sm text-gray-500">总数</div>
+                        <div class="text-2xl font-bold" id="stat-total">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="text-sm text-gray-500">待办</div>
+                        <div class="text-2xl font-bold" id="stat-todos">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="text-sm text-gray-500">已完成</div>
+                        <div class="text-2xl font-bold" id="stat-completed">0</div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <div class="text-sm text-gray-500">本周</div>
+                        <div class="text-2xl font-bold" id="stat-week">0</div>
+                    </div>
+                </div>
 
-        <!-- 胶囊列表 -->
-        <div id="capsules-container" class="space-y-4">
-            <!-- 胶囊卡片将通过 JavaScript 动态加载 -->
-        </div>
+                <!-- 种子列表 -->
+                <div id="capsules-container" class="space-y-4">
+                    <!-- 种子卡片将通过 JavaScript 动态加载 -->
+                </div>
 
-        <!-- 空状态 -->
-        <div id="empty-state" class="hidden text-center py-12">
-            <div class="text-6xl mb-4">🌱</div>
-            <h3 class="text-xl font-semibold text-gray-700 mb-2">暂无胶囊</h3>
-            <p class="text-gray-500 mb-4">点击"新建"按钮创建你的第一个想法</p>
-            <button onclick="showCreateModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition">
-                ✨ 新建胶囊
-            </button>
+                <!-- 空状态 -->
+                <div id="empty-state" class="hidden text-center py-12">
+                    <div class="text-6xl mb-4">🌱</div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">暂无种子</h3>
+                    <p class="text-gray-500 mb-4">点击"新建"按钮创建你的第一个想法</p>
+                    <button onclick="showCreateModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition">
+                        ✨ 新建种子
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 右侧：AI 分析面板（占 4 列，可隐藏） -->
+            <div id="ai-panel" class="col-span-12 lg:col-span-4 hidden">
+                <div class="bg-white rounded-lg shadow-sm p-4 sticky top-40">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="text-xl mr-2">🤖</span>
+                        AI 分析
+                    </h2>
+                    
+                    <div v-if="!selectedSeed" class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">👈</div>
+                        <div>点击左侧种子进行分析</div>
+                    </div>
+                    
+                    <div v-else>
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-xs text-gray-500">当前分析</div>
+                            <div class="font-medium text-sm">{{ selectedSeed.title || selectedSeed.content?.slice(0, 30) }}</div>
+                        </div>
+                        
+                        <div class="space-y-2 mb-4">
+                            <button @click="analyzeExpansion" :disabled="analyzing" class="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white px-3 py-2 rounded-lg text-sm transition">
+                                💡 点子扩张
+                            </button>
+                            <button @click="analyzeLink" :disabled="analyzing || !selectedSeed.url" class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-3 py-2 rounded-lg text-sm transition">
+                                🔗 链接分析
+                            </button>
+                            <button @click="findRelations" :disabled="analyzing" class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-3 py-2 rounded-lg text-sm transition">
+                                🔍 智能关联
+                            </button>
+                        </div>
+                        
+                        <!-- 分析结果 -->
+                        <div v-if="analysisResult" class="border-t pt-4">
+                            <div v-if="analysisResult.type === 'expansion'" class="space-y-3">
+                                <h3 class="font-bold text-sm">📋 扩展方案</h3>
+                                <div v-for="(item, key) in analysisResult.data.expanded" :key="key" class="text-xs">
+                                    <span class="font-medium text-gray-700">{{ key }}:</span>
+                                    <span class="text-gray-600 ml-1">{{ Array.isArray(item) ? item.slice(0,3).join(', ') : item }}</span>
+                                </div>
+                            </div>
+                            
+                            <div v-else-if="analysisResult.type === 'link'" class="space-y-3">
+                                <h3 class="font-bold text-sm">📄 网页摘要</h3>
+                                <p class="text-xs text-gray-600">{{ analysisResult.data.analysis?.summary?.slice(0, 150) }}</p>
+                            </div>
+                            
+                            <div v-else-if="analysisResult.type === 'relations'" class="space-y-2">
+                                <h3 class="font-bold text-sm">🔗 相关种子 ({{ analysisResult.data.relations?.length || 0 }})</h3>
+                                <div v-for="rel in analysisResult.data.relations?.slice(0,5)" :key="rel.id" class="text-xs p-2 bg-gray-50 rounded">
+                                    {{ rel.title }} <span class="text-green-600">{{ (rel.similarity * 100).toFixed(0) }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="analyzing" class="text-center py-4 text-purple-600">
+                            🤖 AI 分析中...
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
-    <!-- 新建胶囊模态框 -->
+    <!-- 新建种子模态框 -->
     <div id="create-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
             <div class="p-6 border-b">
-                <h2 class="text-xl font-bold" data-zh="新建胶囊" data-en="New Capsule">新建胶囊</h2>
+                <h2 class="text-xl font-bold">新建种子</h2>
             </div>
             <div class="p-6">
-                <!-- 类型选择 -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">类型</label>
                     <div class="grid grid-cols-4 gap-2">
@@ -147,166 +189,176 @@
                         <button onclick="selectType('voice')" class="type-btn px-3 py-2 rounded-lg text-sm font-medium bg-cyan-100 text-cyan-700 hover:bg-cyan-200 transition" data-type="voice">🎤 语音</button>
                     </div>
                 </div>
-                
-                <!-- 标题 -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">标题</label>
                     <input type="text" id="create-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
-                
-                <!-- 内容 -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">内容</label>
                     <textarea id="create-content" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="记录你的想法..."></textarea>
                 </div>
-                
-                <!-- 标签 -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">标签</label>
-                    <input type="text" id="create-tags" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="用逗号分隔，例如：工作，重要">
+                    <input type="text" id="create-tags" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="用逗号分隔">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">URL（可选）</label>
+                    <input type="url" id="create-url" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://...">
                 </div>
             </div>
             <div class="p-6 border-t bg-gray-50 rounded-b-lg flex justify-end space-x-3">
                 <button onclick="hideCreateModal()" class="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition">取消</button>
-                <button onclick="createCapsule()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">创建</button>
+                <button onclick="createSeed()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">创建</button>
             </div>
         </div>
     </div>
 
+    <!-- Vue3 for AI Panel -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script>
-        // 全局变量
+        // AI Panel Vue App
+        const aiApp = Vue.createApp({
+            setup() {
+                const selectedSeed = Vue.ref(null);
+                const analysisResult = Vue.ref(null);
+                const analyzing = Vue.ref(false);
+
+                const analyzeExpansion = async () => {
+                    if (!selectedSeed.value) return;
+                    analyzing.value = true;
+                    try {
+                        const res = await fetch(`/api/capsule/${selectedSeed.value.id}/analyze/expand`, { method: 'POST' });
+                        const json = await res.json();
+                        if (json.code === 200 || json.success) {
+                            analysisResult.value = { type: 'expansion', data: json.data || json.result };
+                        }
+                    } catch (e) { console.error(e); }
+                    analyzing.value = false;
+                };
+
+                const analyzeLink = async () => {
+                    if (!selectedSeed.value?.url) return;
+                    analyzing.value = true;
+                    try {
+                        const res = await fetch(`/api/capsule/${selectedSeed.value.id}/analyze/link`, { method: 'POST' });
+                        const json = await res.json();
+                        if (json.code === 200 || json.success) {
+                            analysisResult.value = { type: 'link', data: json.data || json.result };
+                        }
+                    } catch (e) { console.error(e); }
+                    analyzing.value = false;
+                };
+
+                const findRelations = async () => {
+                    if (!selectedSeed.value) return;
+                    analyzing.value = true;
+                    try {
+                        const res = await fetch(`/api/capsule/${selectedSeed.value.id}/relations`);
+                        const json = await res.json();
+                        if (json.code === 200 || json.success) {
+                            analysisResult.value = { type: 'relations', data: json.data || json.result };
+                        }
+                    } catch (e) { console.error(e); }
+                    analyzing.value = false;
+                };
+
+                return { selectedSeed, analysisResult, analyzing, analyzeExpansion, analyzeLink, findRelations };
+            }
+        }).mount('#ai-panel');
+
+        // 全局函数
+        function toggleAI() {
+            const panel = document.getElementById('ai-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function setAISeed(capsule) {
+            aiApp._instance.provides.selectedSeed.value = capsule;
+        }
+
+        // 种子列表功能
         let capsules = [];
         let currentFilter = { type: 'all', search: '' };
         let selectedType = 'note';
-        let currentLang = 'zh';
 
-        // 语言切换
-        const i18n = {
-            zh: {
-                title: '📦 Echo Seed 回声种子',
-                export: '导出',
-                new: '新建',
-                search: '搜索胶囊...',
-                total: '总数',
-                todos: '待办',
-                completed: '已完成',
-                week: '本周',
-                empty: '暂无胶囊',
-                emptyDesc: '点击"新建"按钮创建你的第一个想法',
-                create: '新建胶囊',
-                createTitle: '新建胶囊',
-                type: '类型',
-                title: '标题',
-                content: '内容',
-                tags: '标签',
-                cancel: '取消',
-                createBtn: '创建'
-            },
-            en: {
-                title: '📦 Echo Seed',
-                export: 'Export',
-                new: 'New',
-                search: 'Search capsules...',
-                total: 'Total',
-                todos: 'Todos',
-                completed: 'Completed',
-                week: 'This Week',
-                empty: 'No capsules',
-                emptyDesc: 'Click "New" to create your first idea',
-                create: 'New Capsule',
-                createTitle: 'New Capsule',
-                type: 'Type',
-                title: 'Title',
-                content: 'Content',
-                tags: 'Tags',
-                cancel: 'Cancel',
-                createBtn: 'Create'
-            }
-        };
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'zh' ? 'en' : 'zh';
-            document.getElementById('lang-btn').textContent = currentLang === 'zh' ? '🌐 EN' : '🌐 中文';
-            document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
-            
-            // 更新文本
-            document.querySelector('h1').textContent = i18n[currentLang].title;
-            document.querySelector('[data-zh="导出"]').textContent = i18n[currentLang].export;
-            document.querySelector('[data-zh="新建"]').textContent = i18n[currentLang].new;
-            document.getElementById('search-input').placeholder = i18n[currentLang].search;
-            
-            localStorage.setItem('echo-seed-lang', currentLang);
-        }
-
-        // 加载语言偏好
-        const savedLang = localStorage.getItem('echo-seed-lang') || 'zh';
-        if (savedLang === 'en') {
-            toggleLanguage();
-        }
-
-        // 初始化
-        async function init() {
-            await loadCapsules();
-            loadStats();
-        }
-
-        // 加载胶囊
-        async function loadCapsules() {
-            try {
-                const params = new URLSearchParams();
-                if (currentFilter.type !== 'all') params.append('type', currentFilter.type);
-                if (currentFilter.search) params.append('search', currentFilter.search);
-                
-                const res = await fetch(`/api/capsules?${params}`);
-                const data = await res.json();
-                
-                if (data.success) {
-                    capsules = data.data;
-                    renderCapsules();
-                }
-            } catch (error) {
-                console.error('加载胶囊失败:', error);
+        async function loadSeeds() {
+            const res = await fetch('/api/capsules?limit=100');
+            const json = await res.json();
+            // 兼容两种返回格式
+            const data = json.data || json.capsules || [];
+            if (json.code === 200 || json.success === true) {
+                capsules = data;
+                renderSeeds();
+                updateStats();
             }
         }
 
-        // 渲染胶囊
-        function renderCapsules() {
+        function renderSeeds() {
             const container = document.getElementById('capsules-container');
-            const emptyState = document.getElementById('empty-state');
-            
-            if (capsules.length === 0) {
+            const filtered = capsules.filter(c => {
+                const typeMatch = currentFilter.type === 'all' || c.type === currentFilter.type;
+                const searchMatch = !currentFilter.search || 
+                    (c.title && c.title.toLowerCase().includes(currentFilter.search.toLowerCase())) ||
+                    (c.content && c.content.toLowerCase().includes(currentFilter.search.toLowerCase()));
+                return typeMatch && searchMatch;
+            });
+
+            if (filtered.length === 0) {
+                document.getElementById('empty-state').classList.remove('hidden');
                 container.innerHTML = '';
-                emptyState.classList.remove('hidden');
                 return;
             }
-            
-            emptyState.classList.add('hidden');
-            container.innerHTML = capsules.map(capsule => `
-                <div class="capsule-card bg-white rounded-lg shadow-sm p-4 border-l-4" style="border-left-color: ${capsule.type_color}">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <span class="text-xl">${capsule.type_emoji}</span>
-                                <span class="text-sm font-medium px-2 py-1 rounded" style="background-color: ${capsule.type_bg}; color: ${capsule.type_color}">
-                                    ${capsule.type_name}
-                                </span>
-                                <span class="text-xs text-gray-500">${new Date(capsule.created_at).toLocaleString('zh-CN')}</span>
+
+            document.getElementById('empty-state').classList.add('hidden');
+            container.innerHTML = filtered.map(c => {
+                const typeConfig = {
+                    note: { emoji: '📝', color: 'bg-gray-100', border: 'border-gray-300' },
+                    idea: { emoji: '💡', color: 'bg-orange-50', border: 'border-orange-300' },
+                    link: { emoji: '🔗', color: 'bg-blue-50', border: 'border-blue-300' },
+                    diary: { emoji: '📔', color: 'bg-green-50', border: 'border-green-300' },
+                    thought: { emoji: '💭', color: 'bg-purple-50', border: 'border-purple-300' },
+                    collection: { emoji: '⭐', color: 'bg-pink-50', border: 'border-pink-300' },
+                    todo: { emoji: '✅', color: 'bg-red-50', border: 'border-red-300' },
+                    voice: { emoji: '🎤', color: 'bg-cyan-50', border: 'border-cyan-300' }
+                }[c.type] || { emoji: '📝', color: 'bg-gray-100', border: 'border-gray-300' };
+
+                return `
+                    <div class="capsule-card bg-white rounded-lg shadow-sm p-4 cursor-pointer border-l-4 ${typeConfig.color} ${typeConfig.border}" onclick="selectSeed('${c.id}')">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <span class="text-lg">${typeConfig.emoji}</span>
+                                    <span class="text-xs px-2 py-1 bg-gray-100 rounded-full">${c.type}</span>
+                                    ${c.tags ? `<span class="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full">${c.tags.split(',')[0]}</span>` : ''}
+                                </div>
+                                <h3 class="font-bold text-gray-800 mb-1">${c.title || c.content?.slice(0, 30) || '无标题'}</h3>
+                                <p class="text-sm text-gray-600">${c.content?.slice(0, 100) || ''}${c.content?.length > 100 ? '...' : ''}</p>
+                                <div class="mt-2 text-xs text-gray-400">${new Date(c.created_at).toLocaleString('zh-CN')}</div>
                             </div>
-                            ${capsule.title ? `<h3 class="text-lg font-semibold mb-2">${escapeHtml(capsule.title)}</h3>` : ''}
-                            <p class="text-gray-700 whitespace-pre-wrap">${escapeHtml(capsule.content)}</p>
-                            ${capsule.url ? `<a href="${capsule.url}" target="_blank" class="text-blue-500 hover:underline mt-2 inline-block">🔗 ${capsule.url}</a>` : ''}
-                            ${capsule.tags ? `<div class="mt-2 flex flex-wrap gap-2">${capsule.tags.split(',').map(tag => `<span class="text-xs bg-gray-100 px-2 py-1 rounded">#${tag.trim()}</span>`).join('')}</div>` : ''}
-                        </div>
-                        <div class="flex space-x-2">
-                            ${capsule.status === 'active' ? `<button onclick="updateStatus('${capsule.id}', 'completed')" class="text-green-500 hover:text-green-600" title="完成">✅</button>` : ''}
-                            <button onclick="deleteCapsule('${capsule.id}')" class="text-red-500 hover:text-red-600" title="删除">🗑️</button>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        // 筛选类型
+        function selectSeed(id) {
+            const capsule = capsules.find(c => c.id === id);
+            if (capsule) {
+                aiApp._instance.provides.selectedSeed.value = capsule;
+                // 打开 AI 面板
+                document.getElementById('ai-panel').classList.remove('hidden');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = capsules.length;
+            document.getElementById('stat-todos').textContent = capsules.filter(c => c.type === 'todo').length;
+            document.getElementById('stat-completed').textContent = capsules.filter(c => c.status === 'completed').length;
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            document.getElementById('stat-week').textContent = capsules.filter(c => new Date(c.created_at) > weekAgo).length;
+        }
+
         function filterByType(type) {
             currentFilter.type = type;
             document.querySelectorAll('.type-filter').forEach(btn => {
@@ -315,166 +367,71 @@
             });
             event.target.classList.remove('bg-gray-200', 'text-gray-700');
             event.target.classList.add('active', 'bg-gray-800', 'text-white');
-            loadCapsules();
+            renderSeeds();
         }
 
-        // 搜索
-        function searchCapsules() {
+        function searchSeeds() {
             currentFilter.search = document.getElementById('search-input').value;
-            loadCapsules();
+            renderSeeds();
         }
 
-        // 加载统计
-        async function loadStats() {
-            try {
-                const res = await fetch('/api/stats');
-                const data = await res.json();
-                
-                if (data.success) {
-                    const stats = data.data;
-                    document.getElementById('stat-total').textContent = stats.total;
-                    document.getElementById('stat-todos').textContent = stats.by_type?.todo || 0;
-                    document.getElementById('stat-completed').textContent = stats.by_status?.completed || 0;
-                }
-            } catch (error) {
-                console.error('加载统计失败:', error);
-            }
-        }
-
-        // 显示新建模态框
         function showCreateModal() {
             document.getElementById('create-modal').classList.remove('hidden');
-            // 初始化默认类型选中状态
-            selectType('note');
         }
 
-        // 隐藏新建模态框
         function hideCreateModal() {
             document.getElementById('create-modal').classList.add('hidden');
         }
 
-        // 选择类型
         function selectType(type) {
             selectedType = type;
             document.querySelectorAll('.type-btn').forEach(btn => {
                 btn.classList.remove('ring-2', 'ring-blue-500');
-                if (btn.dataset.type === type) {
-                    btn.classList.add('ring-2', 'ring-blue-500');
-                }
             });
+            event.target.classList.add('ring-2', 'ring-blue-500');
         }
 
-        // 创建胶囊
-        async function createCapsule() {
+        async function createSeed() {
             const title = document.getElementById('create-title').value;
             const content = document.getElementById('create-content').value;
             const tags = document.getElementById('create-tags').value;
-            
-            // 验证至少要有标题或内容
-            if (!title.trim() && !content.trim()) {
-                alert('请至少输入标题或内容！');
+            const url = document.getElementById('create-url').value;
+
+            if (!content.trim()) {
+                alert('内容不能为空');
                 return;
             }
-            
-            try {
-                const res = await fetch('/api/capsules', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: selectedType, title, content, tags })
-                });
-                
-                const data = await res.json();
-                if (data.success) {
-                    hideCreateModal();
-                    document.getElementById('create-title').value = '';
-                    document.getElementById('create-content').value = '';
-                    document.getElementById('create-tags').value = '';
-                    await loadCapsules();
-                    loadStats();
-                } else {
-                    alert('创建失败：' + (data.error || '未知错误'));
-                }
-            } catch (error) {
-                console.error('创建失败:', error);
-                alert('创建失败：' + error.message);
+
+            const res = await fetch('/api/capsules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: Date.now().toString(),
+                    type: selectedType,
+                    title,
+                    content,
+                    tags,
+                    url
+                })
+            });
+            const json = await res.json();
+            if (json.success || json.code === 200) {
+                alert('✅ 种子已创建！AI 分析中...');
+                hideCreateModal();
+                loadSeeds();
+                // 清空表单
+                document.getElementById('create-title').value = '';
+                document.getElementById('create-content').value = '';
+                document.getElementById('create-tags').value = '';
+                document.getElementById('create-url').value = '';
+            } else {
+                alert('创建失败：' + (json.error || json.message));
             }
         }
 
-        // 更新状态
-        async function updateStatus(id, status) {
-            try {
-                await fetch(`/api/capsules/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status })
-                });
-                await loadCapsules();
-                loadStats();
-            } catch (error) {
-                console.error('更新失败:', error);
-            }
-        }
-
-        // 删除胶囊
-        async function deleteCapsule(id) {
-            if (!confirm('确定要删除这个胶囊吗？')) return;
-            
-            try {
-                await fetch(`/api/capsules/${id}`, { method: 'DELETE' });
-                await loadCapsules();
-                loadStats();
-            } catch (error) {
-                console.error('删除失败:', error);
-            }
-        }
-
-        // 导出菜单
-        function toggleExportMenu() {
-            document.getElementById('export-menu').classList.toggle('hidden');
-        }
-
-        // 导出数据
-        async function exportData(format, scope) {
-            const params = new URLSearchParams();
-            if (scope === 'current') {
-                if (currentFilter.type !== 'all') params.append('type', currentFilter.type);
-                if (currentFilter.search) params.append('search', currentFilter.search);
-            }
-            
-            window.open(`/api/export/${format}?${params}`, '_blank');
-            document.getElementById('export-menu').classList.add('hidden');
-        }
-
-        // 导出统计
-        async function exportStats() {
-            const res = await fetch('/api/export/stats');
-            const data = await res.json();
-            
-            if (data.success) {
-                const stats = data.data;
-                const text = `Echo Seed 统计信息\n\n总数：${stats.total}\n按类型：${JSON.stringify(stats.by_type)}\n按状态：${JSON.stringify(stats.by_status)}\n待办事项：${stats.active_todos}`;
-                
-                const blob = new Blob([text], {type: 'text/plain'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `echo_seed_stats_${new Date().toISOString().split('T')[0]}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-            }
-            
-            document.getElementById('export-menu').classList.add('hidden');
-        }
-
-        // HTML 转义
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // 启动
-        init();
+        // 初始化
+        loadSeeds();
     </script>
 </body>
 </html>
+{% endraw %}
