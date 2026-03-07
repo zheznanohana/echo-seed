@@ -16,7 +16,7 @@ import sqlite3
 # 小小爪 API 配置
 XIAOXIAOZHAO_CONFIG = {
     "base_url": "https://api.minimaxi.com/anthropic/v1",
-    "api_key": "sk-cp-i3RGI_SA2M0OeNKhDKMs_sYuz9CM3ukFc1MmH7Ci8SRHgV7tJF0qARzCe6nXHJa1vl5zIw8C2TsP-w_vjPl--3N7KeUHL7m64Xwso2R-wVYAplB8DoKoEw8",
+    "api_key": "",
     "model": "MiniMax-M2.5"
 }
 
